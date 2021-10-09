@@ -12,7 +12,16 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 
-var requestHandler = function(request, response) {
+var data = {
+  results: [
+    {
+      key: 1,
+      hi: 2
+    }
+  ]
+};
+
+var requestHandler = function (request, response) {
   // Request and Response come from node's http module.
   //
   // They include information about both the incoming request, such as
@@ -29,7 +38,7 @@ var requestHandler = function(request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-  // The outgoing status.
+  // The outgoing status. //200 = success code
   var statusCode = 200;
 
   // See the note below about CORS headers.
@@ -43,7 +52,66 @@ var requestHandler = function(request, response) {
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-  response.writeHead(statusCode, headers);
+
+  const handleGet = (request) => {
+    if (request.url !== '/classes/messages') {
+      statusCode = 404;
+      response.writeHead(statusCode, headers);
+      response.end();
+
+    } else {
+      statusCode = 200;
+      response.writeHead(statusCode, headers);
+      response.end(JSON.stringify(data));
+    }
+
+    //** response components to return: header, data, response code
+    //**  if request.url is equal to '/classes/message, keep going
+    //**      or else send 404
+    //**
+
+    //declare a variable of the array/object from request.url, stringify it (pass this to response.end)
+
+  };
+
+  const handlePost = (request) => {
+    //access request.url; if it's bad, change statusCode to 404
+    if (request.url !== '/classes/messages') {
+      statusCode = 404;
+      response.writeHead(statusCode, headers);
+      response.end();
+      //check that the new item is the correct data type and has the expected properties
+    } else if (request.contentType !== 'application/json') {
+      statusCode = 407;
+      response.writeHead(statusCode, headers);
+      response.end();
+    } else {
+      var requestBody = '';
+      request.on('data', (data) => {
+        requestBody += data;
+        if (requestBody.length > 1e7) {
+          response.writeHead(413, 'request entity too large', headers);
+          response.end();
+        }
+      });
+      request.on('end', () => {
+        response.writeHead(200, headers);
+        response.end(requestBody);
+      });
+    }
+    //add the new item to our data set (newItem is passed in at request.data)
+
+  };
+
+  if (request.method === 'GET') {
+    // invoke GET handler function
+    handleGet(request);
+  } else if (request.method === 'POST') {
+    // invoke POST handler function
+    handlePost(request);
+  }
+
+
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -52,7 +120,8 @@ var requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end('Hello, World!');
+
+  // response.end(JSON.stringify(data));
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -71,3 +140,89 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
+
+module.exports = requestHandler;
+
+// //Annie's get/post code from groceryList project
+// var API = {
+//   get: (callback) => {
+//     var helper = callback;
+//     $.get({
+//       url: 'https://hrsf-grocery-list.herokuapp.com/api/groceries',
+//       data: 'data???',
+//       //callback should be "setStateHelper" from app.jsx
+//       success: (data) => {
+//         //call the callback
+//         //pass "data" back to app
+//         helper(data);
+//       }
+//     })
+//   },
+//   post: (newItem) => {
+//     console.log('post newItem', newItem);
+//     var newItem = newItem;
+//     // debugger;
+//     $.ajax({
+//       type: 'POST',
+//       url: 'https://hrsf-grocery-list.herokuapp.com/api/groceries',
+//       data: newItem,
+//       success: ({ data }) => console.log('data posted to API', newItem),
+//       error: () => console.log('boooooo! posting error', newItem)
+//     })
+//   }
+// }
+
+
+
+// //"Parse" function from chatterbox-client project
+// var Parse = {
+//   server: `https://app-hrsei-api.herokuapp.com/api/chatterbox/messages/${window.CAMPUS}`,
+//   create: function(message, successCB, errorCB = null) {
+//     // TODO: send a request to the Parse API to save the message
+//     $.ajax({
+//       url: Parse.server,
+//       type: 'POST',
+//       data: JSON.stringify(message),
+//       contentType: 'application/json',
+//       success: successCB,
+//       error: errorCB
+//     });
+//   },
+
+//   readAll: function(successCB, errorCB = null) {
+//     $.ajax({
+//       url: Parse.server,
+//       type: 'GET',
+//       data: { order: '-createdAt' },
+//       contentType: 'application/json',
+//       success: successCB,
+//       error: errorCB || function(error) {
+//         console.error('chatterbox: Failed to fetch messages', error);
+//       }
+//     });
+//   }
+
+// };
+
+
+// //Jake's
+
+
+//   getGroceries() {
+//     $.ajax({
+//       url: 'https://hrsf-grocery-list.herokuapp.com/api/groceries',
+//       method: 'GET',
+//       success: groceries => this.setState({ groceries }),
+//       error: err => console.log(err)
+//     })
+//   }
+
+//   addGrocery(grocery) {
+//     $.ajax({
+//       url: 'https://hrsf-grocery-list.herokuapp.com/api/groceries',
+//       method: 'POST',
+//       data: grocery,
+//       success: this.getGroceries,
+//       error: console.log
+//     })
+//   }
